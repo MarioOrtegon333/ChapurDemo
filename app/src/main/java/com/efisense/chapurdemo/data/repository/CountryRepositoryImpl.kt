@@ -74,6 +74,32 @@ class CountryRepositoryImpl(
             emit(Result.failure(UnknownException("Error inesperado: ${e.message}", e)))
         }
     }.flowOn(Dispatchers.IO)
+
+    /**
+     * Busca países por nombre usando la API REST Countries.
+     *
+     * @param query Texto de búsqueda
+     * @return Flow que emite Result.success con la lista de países encontrados o Result.failure con el error
+     */
+    override fun searchCountriesByName(query: String): Flow<Result<List<Country>>> = flow {
+        try {
+            val response = apiService.searchCountriesByName(query)
+            val countries = CountryMapper.fromDtoList(response)
+                .sortedBy { it.commonName }
+            emit(Result.success(countries))
+        } catch (e: IOException) {
+            emit(Result.failure(NetworkException("Error de conexión. Verifica tu conexión a internet.", e)))
+        } catch (e: retrofit2.HttpException) {
+            val errorMessage = when (e.code()) {
+                404 -> "No se encontraron países"
+                500 -> "Error del servidor"
+                else -> "Error HTTP: ${e.code()}"
+            }
+            emit(Result.failure(ApiException(errorMessage, e.code(), e)))
+        } catch (e: Exception) {
+            emit(Result.failure(UnknownException("Error inesperado: ${e.message}", e)))
+        }
+    }.flowOn(Dispatchers.IO)
 }
 
 /**

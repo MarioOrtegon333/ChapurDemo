@@ -5,6 +5,7 @@ import com.efisense.chapurdemo.data.repository.CountryRepositoryImpl
 import com.efisense.chapurdemo.domain.repository.CountryRepository
 import com.efisense.chapurdemo.domain.usecase.GetAllCountriesUseCase
 import com.efisense.chapurdemo.domain.usecase.GetCountryByCodeUseCase
+import com.efisense.chapurdemo.domain.usecase.SearchCountriesUseCase
 import com.efisense.chapurdemo.presentation.countrydetail.CountryDetailViewModel
 import com.efisense.chapurdemo.presentation.countrylist.CountryListViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -42,6 +43,7 @@ val domainModule = module {
     // Use Cases
     factory { GetAllCountriesUseCase(get()) }
     factory { GetCountryByCodeUseCase(get()) }
+    factory { SearchCountriesUseCase(get()) }
 }
 
 /**
@@ -50,7 +52,7 @@ val domainModule = module {
  */
 val presentationModule = module {
     // ViewModels
-    viewModel { CountryListViewModel(get()) }
+    viewModel { CountryListViewModel(get(), get()) }
     viewModel { CountryDetailViewModel(get(), get()) }
 }
 

@@ -48,5 +48,19 @@ interface CountryApiService {
         @Path("code") code: String,
         @Query("fields") fields: String = DETAIL_FIELDS
     ): CountryDto
+
+    /**
+     * Busca países por nombre (común u oficial).
+     * Endpoint: GET https://restcountries.com/v3.1/name/{name}?fields=...
+     *
+     * @param name Nombre del país a buscar (puede ser parcial)
+     * @param fields Campos a incluir en la respuesta
+     * @return Lista de [CountryDto] que coinciden con el nombre buscado
+     */
+    @GET("name/{name}")
+    suspend fun searchCountriesByName(
+        @Path("name") name: String,
+        @Query("fields") fields: String = LIST_FIELDS
+    ): List<CountryDto>
 }
 

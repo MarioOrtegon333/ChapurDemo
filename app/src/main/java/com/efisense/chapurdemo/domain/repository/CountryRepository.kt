@@ -24,4 +24,12 @@ interface CountryRepository {
      * @return Un [Flow] que emite un [Result] con el país o un error
      */
     fun getCountryByCode(code: String): Flow<Result<Country>>
+
+    /**
+     * Busca países por nombre (común u oficial).
+     *
+     * @param query Texto de búsqueda (puede ser parcial)
+     * @return Un [Flow] que emite un [Result] con la lista de países encontrados o un error
+     */
+    fun searchCountriesByName(query: String): Flow<Result<List<Country>>>
 }
