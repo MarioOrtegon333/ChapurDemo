@@ -16,12 +16,18 @@ sealed class CountryListUiState {
 
     /**
      * Estado de éxito.
-     * Contiene la lista de países obtenida exitosamente.
+     * Contiene la lista de países obtenida exitosamente con información de paginación.
      *
-     * @param countries Lista de países a mostrar
+     * @param countries Lista de países a mostrar en la página actual
+     * @param currentPage Página actual (base 1)
+     * @param totalPages Total de páginas disponibles
+     * @param totalCountries Total de países sin paginar
      */
     data class Success(
-        val countries: List<Country>
+        val countries: List<Country>,
+        val currentPage: Int = 1,
+        val totalPages: Int = 1,
+        val totalCountries: Int = 0
     ) : CountryListUiState()
 
     /**

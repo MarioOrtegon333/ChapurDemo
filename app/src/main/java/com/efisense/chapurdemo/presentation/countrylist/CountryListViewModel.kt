@@ -28,6 +28,10 @@ class CountryListViewModel(
     private val searchCountriesUseCase: SearchCountriesUseCase
 ) : ViewModel() {
 
+    companion object {
+        private const val PAGE_SIZE = 10
+    }
+
     /**
      * Estado mutable privado de la UI.
      * Solo el ViewModel puede modificar este estado.
@@ -55,6 +59,17 @@ class CountryListViewModel(
      */
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    /**
+     * Página actual de la paginación.
+     */
+    private val _currentPage = MutableStateFlow(1)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+
+    /**
+     * Lista completa de países (sin paginar) para realizar la paginación local.
+     */
+    private var allCountries: List<com.efisense.chapurdemo.domain.model.Country> = emptyList()
 
     init {
         // Cargar países automáticamente al inicializar el ViewModel
@@ -94,6 +109,7 @@ class CountryListViewModel(
      */
     fun clearSearch() {
         _searchQuery.value = ""
+        _currentPage.value = 1
     }
 
     /**
@@ -108,7 +124,9 @@ class CountryListViewModel(
             getAllCountriesUseCase().collect { result ->
                 _uiState.value = result.fold(
                     onSuccess = { countries ->
-                        CountryListUiState.Success(countries)
+                        allCountries = countries
+                        _currentPage.value = 1
+                        getPaginatedState(countries, 1)
                     },
                     onFailure = { exception ->
                         CountryListUiState.Error(
@@ -117,6 +135,61 @@ class CountryListViewModel(
                     }
                 )
             }
+        }
+    }
+
+    /**
+     * Obtiene el estado paginado de la lista de países.
+     */
+    private fun getPaginatedState(countries: List<com.efisense.chapurdemo.domain.model.Country>, page: Int): CountryListUiState.Success {
+        val totalPages = (countries.size + PAGE_SIZE - 1) / PAGE_SIZE
+        val startIndex = (page - 1) * PAGE_SIZE
+        val endIndex = minOf(startIndex + PAGE_SIZE, countries.size)
+        val paginatedList = if (startIndex < countries.size) {
+            countries.subList(startIndex, endIndex)
+        } else {
+            emptyList()
+        }
+        return CountryListUiState.Success(
+            countries = paginatedList,
+            currentPage = page,
+            totalPages = totalPages,
+            totalCountries = countries.size
+        )
+    }
+
+    /**
+     * Navega a la página siguiente.
+     */
+    fun nextPage() {
+        val currentState = _uiState.value
+        if (currentState is CountryListUiState.Success && currentState.currentPage < currentState.totalPages) {
+            val newPage = currentState.currentPage + 1
+            _currentPage.value = newPage
+            _uiState.value = getPaginatedState(allCountries, newPage)
+        }
+    }
+
+    /**
+     * Navega a la página anterior.
+     */
+    fun previousPage() {
+        val currentState = _uiState.value
+        if (currentState is CountryListUiState.Success && currentState.currentPage > 1) {
+            val newPage = currentState.currentPage - 1
+            _currentPage.value = newPage
+            _uiState.value = getPaginatedState(allCountries, newPage)
+        }
+    }
+
+    /**
+     * Navega a una página específica.
+     */
+    fun goToPage(page: Int) {
+        val currentState = _uiState.value
+        if (currentState is CountryListUiState.Success && page in 1..currentState.totalPages) {
+            _currentPage.value = page
+            _uiState.value = getPaginatedState(allCountries, page)
         }
     }
 
@@ -131,16 +204,19 @@ class CountryListViewModel(
                 _isSearching.value = false
                 _uiState.value = result.fold(
                     onSuccess = { countries ->
+                        allCountries = countries
+                        _currentPage.value = 1
                         if (countries.isEmpty()) {
-                            CountryListUiState.Success(emptyList())
+                            CountryListUiState.Success(emptyList(), 1, 1, 0)
                         } else {
-                            CountryListUiState.Success(countries)
+                            getPaginatedState(countries, 1)
                         }
                     },
                     onFailure = { exception ->
                         // Si no se encontraron países (404), mostrar lista vacía
                         if (exception.message?.contains("No se encontraron") == true) {
-                            CountryListUiState.Success(emptyList())
+                            allCountries = emptyList()
+                            CountryListUiState.Success(emptyList(), 1, 1, 0)
                         } else {
                             CountryListUiState.Error(
                                 exception.message ?: "Error al buscar países"

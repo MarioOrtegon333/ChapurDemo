@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,14 +19,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -112,10 +118,24 @@ fun CountryListScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        CountryList(
-                            countries = state.countries,
-                            onCountryClick = onCountryClick
-                        )
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            CountryList(
+                                countries = state.countries,
+                                onCountryClick = onCountryClick,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            // Paginador
+                            if (state.totalPages > 1) {
+                                PaginationControls(
+                                    currentPage = state.currentPage,
+                                    totalPages = state.totalPages,
+                                    totalCountries = state.totalCountries,
+                                    onPreviousClick = viewModel::previousPage,
+                                    onNextClick = viewModel::nextPage
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -316,3 +336,87 @@ private fun CountryListItem(
         }
     }
 }
+
+/**
+ * Controles de paginación para navegar entre páginas.
+ *
+ * @param currentPage Página actual
+ * @param totalPages Total de páginas
+ * @param totalCountries Total de países
+ * @param onPreviousClick Callback para ir a la página anterior
+ * @param onNextClick Callback para ir a la página siguiente
+ */
+@Composable
+private fun PaginationControls(
+    currentPage: Int,
+    totalPages: Int,
+    totalCountries: Int,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 1.dp
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Botón anterior
+            FilledIconButton(
+                onClick = onPreviousClick,
+                enabled = currentPage > 1,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Página anterior"
+                )
+            }
+
+            // Información de página
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Página $currentPage de $totalPages",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "$totalCountries países en total",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Botón siguiente
+            FilledIconButton(
+                onClick = onNextClick,
+                enabled = currentPage < totalPages,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Página siguiente"
+                )
+            }
+        }
+    }
+}
+
